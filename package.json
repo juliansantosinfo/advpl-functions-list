@@ -1,0 +1,80 @@
+{
+  "name": "advpl-functions-list",
+  "displayName": "AdvPL Functions List",
+  "description": "A extensão *AdvPL Function List* é uma ferramenta projetada para desenvolvedores AdvPL que trabalham com Visual Studio Code. Esta extensão oferece uma maneira conveniente de listar e explorar funções presentes no arquivo em edição diretamente na barra lateral do explorador de arquivos.",
+  "version": "0.0.1",
+  "icon": "images/icon.png",
+  "publisher": "JulianSantos",
+  "author": {
+    "name": "Julian de Almeida Santos",
+    "email": "julian.santos.info@gmail.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/juliansantosinfo/advpl-functions-list",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/juliansantosinfo/advpl-functions-list"
+  },
+  "keywords": [
+    "advpl",
+    "functions",
+    "totvs",
+    "protheus"
+  ],
+  "engines": {
+    "vscode": "^1.87.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:plaintext",
+    "onLanguage:advpl",
+    "onLanguage:tlpp"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "AdvPL Parameters List",
+      "properties": {
+        "advplFunctionsList.regex.staticfunctions": {
+          "type": "string",
+          "default": "static\\s+function\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)",
+          "description": "Define expressão regex para busca da função GetMV"
+        },
+        "advplFunctionsList.regex.userfunctions": {
+          "type": "string",
+          "default": "user\\s+function\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)",
+          "description": "Define expressão regex para busca da função GetNewPar"
+        }
+      }
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "sideBarMenuStaticFunctions",
+          "name": "AdvPL Static Functions"
+        },
+        {
+          "id": "sideBarMenuUserFunctions",
+          "name": "AdvPL User Functions"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.87.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "18.x",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3",
+    "@vscode/test-cli": "^0.0.6",
+    "@vscode/test-electron": "^2.3.9"
+  }
+}
