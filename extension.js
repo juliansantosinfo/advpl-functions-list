@@ -232,27 +232,8 @@ function getStaticFunctionsInActiveEditor() {
     elementParametersList = [];
 
     matches[2].split(",").forEach((element) => {
-      element = element.trim();
-      if (element.length > 0) {
-        if (element.search(" as ") > 0) {
-          element = element.split(" as ").join(" : ");
-        } else {
-          if (element.startsWith("c")) {
-            element = `${element} : character`;
-          } else if (element.startsWith("n")) {
-            element = `${element} : numeric`;
-          } else if (element.startsWith("a")) {
-            element = `${element} : array`;
-          } else if (element.startsWith("d")) {
-            element = `${element} : date`;
-          } else if (element.startsWith("o")) {
-            element = `${element} : object`;
-          } else if (element.startsWith("j")) {
-            element = `${element} : json`;
-          }
-        }
-        elementParametersList.push(element.trim());
-      }
+      element = checkElementType(element);
+      elementParametersList.push(element.trim());
     });
 
     staticFunctionsList.push({
@@ -296,27 +277,8 @@ function getUserFunctionsInActiveEditor() {
     elementParametersList = [];
 
     matches[2].split(",").forEach((element) => {
-      element = element.trim();
-      if (element.trim().length > 0) {
-        if (element.search(" as ") > 0) {
-          element = element.split(" as ").join(" : ");
-        } else {
-          if (element.startsWith("c")) {
-            element = `${element} : character`;
-          } else if (element.startsWith("n")) {
-            element = `${element} : numeric`;
-          } else if (element.startsWith("a")) {
-            element = `${element} : array`;
-          } else if (element.startsWith("d")) {
-            element = `${element} : date`;
-          } else if (element.startsWith("o")) {
-            element = `${element} : object`;
-          } else if (element.startsWith("j")) {
-            element = `${element} : json`;
-          }
-        }
-        elementParametersList.push(element.trim());
-      }
+      element = checkElementType(element);
+      elementParametersList.push(element.trim());
     });
 
     userFunctionsList.push({
@@ -327,6 +289,32 @@ function getUserFunctionsInActiveEditor() {
   }
 
   return userFunctionsList;
+}
+
+function checkElementType(element) {
+  element = element.trim();
+  if (element.trim().length > 0) {
+    if (element.search(" as ") > 0) {
+      element = element.split(" as ").join(" : ");
+    } else {
+      if (element.startsWith("c")) {
+        element = `${element} : character`;
+      } else if (element.startsWith("n")) {
+        element = `${element} : numeric`;
+      } else if (element.startsWith("a")) {
+        element = `${element} : array`;
+      } else if (element.startsWith("d")) {
+        element = `${element} : date`;
+      } else if (element.startsWith("o")) {
+        element = `${element} : object`;
+      } else if (element.startsWith("j")) {
+        element = `${element} : json`;
+      } else {
+        element = `${element} : undefined`;
+      }
+    }
+  }
+  return element;
 }
 
 module.exports = {
