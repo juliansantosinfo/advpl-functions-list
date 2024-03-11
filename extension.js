@@ -9,24 +9,14 @@ function activate(context) {
   // Exibe mensagem de ativação da extensão
   showActivationMessage();
 
-  // Cria a visualização da árvore para funções estáticas
-  const sideBarMenuStaticFunctions = vscode.window.createTreeView(
-    "sideBarMenuStaticFunctions",
-    {
-      treeDataProvider: new SideBarMenuProvider("static"),
-      showCollapseAll: true,
-    }
-  );
-
   // Cria a visualização da árvore para funções de usuário
-  const sideBarMenuUserFunctions = vscode.window.createTreeView(
-    "sideBarMenuUserFunctions",
-    { treeDataProvider: new SideBarMenuProvider("user"), showCollapseAll: true }
+  const sideBarMenuFunctions = vscode.window.createTreeView(
+    "sideBarMenuFunctions",
+    { treeDataProvider: new SideBarMenuProvider(), showCollapseAll: true }
   );
 
   // Registra as visualizações da árvore para serem liberadas quando a extensão for desativada
-  context.subscriptions.push(sideBarMenuStaticFunctions);
-  context.subscriptions.push(sideBarMenuUserFunctions);
+  context.subscriptions.push(sideBarMenuFunctions);
 
   // Registra o comando para abrir um arquivo na linha específica
   vscode.commands.registerCommand(
@@ -76,10 +66,8 @@ function showActivationMessage() {
 class SideBarMenuProvider {
   /**
    * Cria uma instância do provedor de dados da barra lateral.
-   * @param {string} type - O tipo de função (estática ou de usuário).
    */
-  constructor(type) {
-    this.type = type;
+  constructor() {
     this._onDidChangeTreeData = new vscode.EventEmitter();
     this.onDidChangeTreeData = this._onDidChangeTreeData.event;
 
@@ -162,10 +150,7 @@ class SideBarMenuProvider {
       }
       return functionsList;
     } else {
-      functionsList =
-        this.type === "static"
-          ? getFunctionsInActiveEditor("static")
-          : getFunctionsInActiveEditor("user");
+      functionsList = getFunctionsInActiveEditor();
       return functionsList;
     }
   }
@@ -173,10 +158,9 @@ class SideBarMenuProvider {
 
 /**
  * Retorna uma lista de funções encontradas no editor ativo.
- * @param {string} type - O tipo de função (estática ou de usuário).
  * @returns {Array} Uma lista de objetos representando as funções encontradas.
  */
-function getFunctionsInActiveEditor(type) {
+function getFunctionsInActiveEditor() {
   const activeEditor = vscode.window.activeTextEditor;
   if (!activeEditor) {
     return [];
@@ -189,13 +173,15 @@ function getFunctionsInActiveEditor(type) {
 
   const extensionSettings =
     vscode.workspace.getConfiguration("advplFunctionsList");
-  const regexExpression = extensionSettings.regex[type + "functions"];
+  // const regexExpression = extensionSettings.regex[type + "functions"];
+  const regexExpression = extensionSettings.regex.functions;
   const regex = RegExp(regexExpression, "gi");
 
   const functionsList = [];
   let matches;
   while ((matches = regex.exec(textEditor)) !== null) {
-    const label = matches[1];
+    const scope = matches[1];
+    const label = matches[2];
     const parameters = parseParameters(matches[2]);
     const lineNumber = activeEditor.document.positionAt(matches.index).line + 1;
     const variables = getFunctionVariables(label);
@@ -271,10 +257,7 @@ function extractVariables(functionBody) {
   const extensionSettings =
     vscode.workspace.getConfiguration("advplFunctionsList");
   const regexExpressionVariables = RegExp(extensionSettings.regex.variables);
-  const regex = RegExp(
-    regexExpressionVariables,
-    "gi"
-  );
+  const regex = RegExp(regexExpressionVariables, "gi");
 
   const variableList = [];
   let matches;

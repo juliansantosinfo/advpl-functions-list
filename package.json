@@ -34,8 +34,7 @@
   ],
   "main": "./extension.js",
   "contributes": {
-    "commands": [
-    ],
+    "commands": [],
     "configuration": {
       "type": "object",
       "title": "AdvPL Parameters List",
@@ -70,12 +69,8 @@
     "views": {
       "explorer": [
         {
-          "id": "sideBarMenuStaticFunctions",
-          "name": "AdvPL Static Functions"
-        },
-        {
-          "id": "sideBarMenuUserFunctions",
-          "name": "AdvPL User Functions"
+          "id": "sideBarMenuFunctions",
+          "name": "AdvPL Functions"
         }
       ]
     }
