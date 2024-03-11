@@ -182,7 +182,7 @@ function getFunctionsInActiveEditor() {
   while ((matches = regex.exec(textEditor)) !== null) {
     const scope = matches[1];
     const label = matches[2];
-    const parameters = parseParameters(matches[2]);
+    const parameters = parseParameters(matches[3]);
     const lineNumber = activeEditor.document.positionAt(matches.index).line + 1;
     const variables = getFunctionVariables(label);
     functionsList.push({
