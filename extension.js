@@ -1,41 +1,40 @@
 const vscode = require("vscode");
 
 /**
- * This method is called when your extension is activated
- * @param {vscode.ExtensionContext} context
+ * Ativa a extensão.
+ * Registra os menus laterais e comandos necessários.
+ * @param {vscode.ExtensionContext} context - O contexto da extensão.
  */
 function activate(context) {
-  console.log("Extensão AdvPL Functions List foi ativada.");
-  vscode.window.showInformationMessage(
-    "Extensão AdvPL Functions List foi ativada."
-  );
+  // Exibe mensagem de ativação da extensão
+  showActivationMessage();
 
-  // Criar a barra lateral e registrar a classe como provedor de dados
+  // Cria a visualização da árvore para funções estáticas
   const sideBarMenuStaticFunctions = vscode.window.createTreeView(
     "sideBarMenuStaticFunctions",
     {
-      treeDataProvider: new SideBarMenuStaticFunctionsProvider(),
+      treeDataProvider: new SideBarMenuProvider("static"),
+      showCollapseAll: true,
     }
   );
 
-  // Criar a barra lateral e registrar a classe como provedor de dados
+  // Cria a visualização da árvore para funções de usuário
   const sideBarMenuUserFunctions = vscode.window.createTreeView(
     "sideBarMenuUserFunctions",
-    {
-      treeDataProvider: new SideBarMenuUserFunctionsProvider(),
-    }
+    { treeDataProvider: new SideBarMenuProvider("user"), showCollapseAll: true }
   );
 
+  // Registra as visualizações da árvore para serem liberadas quando a extensão for desativada
   context.subscriptions.push(sideBarMenuStaticFunctions);
   context.subscriptions.push(sideBarMenuUserFunctions);
 
-  // Adicionar um manipulador de eventos para abrir o arquivo na linha correspondente
+  // Registra o comando para abrir um arquivo na linha específica
   vscode.commands.registerCommand(
     "advplFunctionsList.sideBarMenu.openFile",
     (lineNumber) => {
       const activeEditor = vscode.window.activeTextEditor;
       if (activeEditor) {
-        const newPosition = new vscode.Position(lineNumber - 1, 0); // Linhas são baseadas em zero
+        const newPosition = new vscode.Position(lineNumber - 1, 0);
         const newSelection = new vscode.Selection(newPosition, newPosition);
         activeEditor.selection = newSelection;
         activeEditor.revealRange(
@@ -47,289 +46,276 @@ function activate(context) {
   );
 }
 
-// This method is called when your extension is deactivated
+/**
+ * Desativa a extensão.
+ * Exibe uma mensagem indicando que a extensão foi desativada.
+ */
 function deactivate() {
   console.log("Extensão AdvPL Functions List foi desativada.");
-  vscode.window.showInformationMessage(
-    "Extensão AdvPL Functions List foi desativada."
+  showInformationMessage("Extensão AdvPL Functions List foi desativada.");
+}
+
+/**
+ * Exibe uma mensagem indicando que a extensão foi ativada, se a configuração estiver ativada.
+ */
+function showActivationMessage() {
+  const shouldShowActivationMessage = vscode.workspace
+    .getConfiguration()
+    .get("advplFunctionsList.showActivationMessage", false);
+
+  if (shouldShowActivationMessage) {
+    console.log("Extensão AdvPL Functions List foi ativada.");
+    showInformationMessage("Extensão AdvPL Functions List foi ativada.");
+  }
+}
+
+/**
+ * Provedor de dados para a visualização da barra lateral.
+ * Responsável por fornecer os itens da árvore.
+ */
+class SideBarMenuProvider {
+  /**
+   * Cria uma instância do provedor de dados da barra lateral.
+   * @param {string} type - O tipo de função (estática ou de usuário).
+   */
+  constructor(type) {
+    this.type = type;
+    this._onDidChangeTreeData = new vscode.EventEmitter();
+    this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+
+    // Registra ouvintes para eventos de alteração de documento e editor ativo
+    vscode.workspace.onDidChangeTextDocument(() => this.refresh());
+    vscode.window.onDidChangeActiveTextEditor(() => this.refresh());
+    vscode.workspace.onDidCloseTextDocument(() => this.refresh());
+  }
+
+  /**
+   * Dispara um evento para atualizar a visualização da árvore.
+   */
+  refresh() {
+    this._onDidChangeTreeData.fire();
+  }
+
+  /**
+   * Retorna um item de árvore com base no elemento fornecido.
+   * @param {any} element - O elemento para o qual gerar o item de árvore.
+   * @returns {vscode.TreeItem} O item de árvore correspondente ao elemento.
+   */
+  getTreeItem(element) {
+    const collapsibleState =
+      element.type == "function"
+        ? vscode.TreeItemCollapsibleState.Collapsed
+        : vscode.TreeItemCollapsibleState.None;
+
+    const commandSideBarMenuOpenFile = {
+      title: "Abrir arquivo",
+      command: "advplFunctionsList.sideBarMenu.openFile",
+      arguments: [element.lineNumber],
+    };
+
+    let iconName = "x";
+    if (element.type) {
+      if (element.type === "function") {
+        iconName = "symbol-function";
+      } else if (element.type === "parameter") {
+        iconName = "symbol-parameter";
+      } else if (element.type === "variable") {
+        iconName = "symbol-variable";
+      }
+    }
+
+    let treeItem = {};
+    treeItem.iconPath = new vscode.ThemeIcon(iconName);
+    treeItem.label = element.label;
+    treeItem.collapsibleState = collapsibleState;
+    if (element.type == "function") {
+      treeItem.command = commandSideBarMenuOpenFile;
+    }
+
+    return treeItem;
+  }
+
+  /**
+   * Retorna os filhos do elemento fornecido.
+   * @param {any} element - O elemento pai para o qual obter os filhos.
+   * @returns {Promise<any[]>} Uma promessa que resolve em uma matriz de elementos filhos.
+   */
+  async getChildren(element) {
+    let functionsList;
+    if (element) {
+      let functionsList = [];
+      if (element.parameters) {
+        element.parameters.forEach((element) => {
+          functionsList.push({
+            type: "parameter",
+            label: element,
+          });
+        });
+      }
+      if (element.variables) {
+        element.variables.forEach((element) => {
+          functionsList.push({
+            type: "variable",
+            label: `${element.scope} : ${element.label}`,
+          });
+        });
+      }
+      return functionsList;
+    } else {
+      functionsList =
+        this.type === "static"
+          ? getFunctionsInActiveEditor("static")
+          : getFunctionsInActiveEditor("user");
+      return functionsList;
+    }
+  }
+}
+
+/**
+ * Retorna uma lista de funções encontradas no editor ativo.
+ * @param {string} type - O tipo de função (estática ou de usuário).
+ * @returns {Array} Uma lista de objetos representando as funções encontradas.
+ */
+function getFunctionsInActiveEditor(type) {
+  const activeEditor = vscode.window.activeTextEditor;
+  if (!activeEditor) {
+    return [];
+  }
+
+  const textEditor = activeEditor.document.getText();
+  if (textEditor.length === 0) {
+    return [];
+  }
+
+  const extensionSettings =
+    vscode.workspace.getConfiguration("advplFunctionsList");
+  const regexExpression = extensionSettings.regex[type + "functions"];
+  const regex = RegExp(regexExpression, "gi");
+
+  const functionsList = [];
+  let matches;
+  while ((matches = regex.exec(textEditor)) !== null) {
+    const label = matches[1];
+    const parameters = parseParameters(matches[2]);
+    const lineNumber = activeEditor.document.positionAt(matches.index).line + 1;
+    const variables = getFunctionVariables(label);
+    functionsList.push({
+      type: "function",
+      label,
+      parameters,
+      variables,
+      lineNumber,
+    });
+  }
+
+  return functionsList;
+}
+
+/**
+ * Analisa uma string de parâmetros e retorna uma lista de parâmetros formatados.
+ * @param {string} parametersString - A string contendo os parâmetros da função.
+ * @returns {Array} Uma lista de parâmetros formatados.
+ */
+function parseParameters(parametersString) {
+  const parameters = [];
+  parametersString.split(",").forEach((element) => {
+    const trimmedElement = element.trim();
+    if (trimmedElement.length > 0) {
+      let parameter = trimmedElement;
+      if (parameter.search(" as ") > 0) {
+        parameter = parameter.split(" as ").join(" : ");
+      } else {
+        parameter = addTypePrefix(parameter);
+      }
+      parameters.push(parameter);
+    }
+  });
+  return parameters;
+}
+
+/**
+ * Retorna uma lista de variáveis encontradas no corpo da função.
+ * @param {string} functionName - O nome da função para a qual extrair as variáveis.
+ * @returns {Array} Uma lista de objetos representando as variáveis encontradas.
+ */
+function getFunctionVariables(functionName) {
+  const activeEditor = vscode.window.activeTextEditor;
+  const textEditor = activeEditor.document.getText();
+  if (textEditor.length === 0) {
+    return [];
+  }
+
+  const regexExpressionFunction = RegExp(
+    `(Static|User)\\sFunction\\s*?${functionName}\\((.*?)\\)([\\s\\S]*?)\\nReturn\\s*?(.*?)\\n`,
+    "gi"
   );
+
+  const matcheFunction = regexExpressionFunction.exec(textEditor);
+
+  if (!matcheFunction) {
+    return [];
+  }
+
+  const functionBody = matcheFunction[0];
+  const variableList = extractVariables(functionBody);
+
+  return variableList;
 }
 
-class SideBarMenuStaticFunctionsProvider {
-  constructor() {
-    // EventEmitter para notificar quando os dados da árvore mudam
-    this._onDidChangeTreeData = new vscode.EventEmitter();
-    this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+/**
+ * Extrai variáveis do corpo da função.
+ * @param {string} functionBody - O corpo da função para o qual extrair as variáveis.
+ * @returns {Array} Uma lista de objetos representando as variáveis encontradas.
+ */
+function extractVariables(functionBody) {
+  const regexExpressionVariables = RegExp(
+    `(Local|Private) (.*?)(\\s|\\t)*?:=`,
+    "gi"
+  );
 
-    // Registrar observadores para eventos de alteração no editor de texto
-    vscode.workspace.onDidChangeTextDocument(() => {
-      this.refresh(); // Atualizar os dados da árvore quando o documento for modificado
-    });
-
-    vscode.window.onDidChangeActiveTextEditor(() => {
-      this.refresh(); // Atualizar os dados da árvore quando o editor ativo mudar
-    });
-
-    vscode.workspace.onDidCloseTextDocument(() => {
-      this.refresh(); // Atualizar os dados da árvore quando um documento for fechado
-    });
-  }
-
-  refresh() {
-    this._onDidChangeTreeData.fire();
-  }
-
-  getTreeItem(element) {
-    let elementLabel;
-    let elementLineNumber;
-    let collapsibleState;
-    let commandSideBarMenuOpenFile;
-
-    elementLabel = element.label;
-    elementLineNumber = element.lineNumber;
-
-    if (element.parameters && element.parameters.length > 0) {
-      collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
-    } else {
-      collapsibleState = vscode.TreeItemCollapsibleState.None;
-    }
-
-    commandSideBarMenuOpenFile = {
-      title: "Abrir arquivo",
-      command: "advplFunctionsList.sideBarMenu.openFile",
-      arguments: [elementLineNumber],
-    };
-
-    return {
-      label: elementLabel,
-      collapsibleState: collapsibleState,
-      command: commandSideBarMenuOpenFile,
-    };
-  }
-
-  async getChildren(element) {
-    if (element) {
-      let parametersList = [];
-      if (element.parameters) {
-        element.parameters.forEach((element) => {
-          parametersList.push({
-            label: element,
-          });
-        });
-      }
-      return parametersList;
-    } else {
-      let staticFunctionsList = [];
-      getStaticFunctionsInActiveEditor().forEach((element) => {
-        staticFunctionsList.push(element);
-      });
-      return staticFunctionsList;
-    }
-  }
-}
-
-class SideBarMenuUserFunctionsProvider {
-  constructor() {
-    // EventEmitter para notificar quando os dados da árvore mudam
-    this._onDidChangeTreeData = new vscode.EventEmitter();
-    this.onDidChangeTreeData = this._onDidChangeTreeData.event;
-
-    // Registrar observadores para eventos de alteração no editor de texto
-    vscode.workspace.onDidChangeTextDocument(() => {
-      this.refresh(); // Atualizar os dados da árvore quando o documento for modificado
-    });
-
-    vscode.window.onDidChangeActiveTextEditor(() => {
-      this.refresh(); // Atualizar os dados da árvore quando o editor ativo mudar
-    });
-
-    vscode.workspace.onDidCloseTextDocument(() => {
-      this.refresh(); // Atualizar os dados da árvore quando um documento for fechado
-    });
-  }
-
-  refresh() {
-    this._onDidChangeTreeData.fire();
-  }
-
-  getTreeItem(element) {
-    let elementLabel;
-    let elementLineNumber;
-    let collapsibleState;
-    let commandSideBarMenuOpenFile;
-
-    elementLabel = element.label;
-    elementLineNumber = element.lineNumber;
-
-    if (element.parameters && element.parameters.length > 0) {
-      collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
-    } else {
-      collapsibleState = vscode.TreeItemCollapsibleState.None;
-    }
-
-    commandSideBarMenuOpenFile = {
-      title: "Abrir arquivo",
-      command: "advplFunctionsList.sideBarMenu.openFile",
-      arguments: [elementLineNumber],
-    };
-
-    return {
-      label: elementLabel,
-      collapsibleState: collapsibleState,
-      command: commandSideBarMenuOpenFile,
-    };
-  }
-
-  async getChildren(element) {
-    if (element) {
-      let parametersList = [];
-      if (element.parameters) {
-        element.parameters.forEach((element) => {
-          parametersList.push({
-            label: element,
-          });
-        });
-      }
-      return parametersList;
-    } else {
-      let userFunctionsList = [];
-      getUserFunctionsInActiveEditor().forEach((element) => {
-        userFunctionsList.push(element);
-      });
-      return userFunctionsList;
-    }
-  }
-}
-
-function getStaticFunctionsInActiveEditor() {
-  let activeEditor;
-  let textEditor;
-  let staticFunctionsList;
-  let extensionSettings;
-  let regexExpression;
+  const variableList = [];
   let matches;
-  let elementLabel;
-  let elementParametersList;
-
-  activeEditor = vscode.window.activeTextEditor;
-  if (!activeEditor) {
-    return [];
+  while ((matches = regexExpressionVariables.exec(functionBody)) !== null) {
+    const type = "variable";
+    const scope = matches[1];
+    const label = matches[2];
+    variableList.push({ type, scope, label });
   }
 
-  extensionSettings = vscode.workspace.getConfiguration("advplFunctionsList");
-
-  textEditor = activeEditor.document.getText();
-  if (textEditor.length == 0) {
-    return [];
-  }
-
-  staticFunctionsList = [];
-  regexExpression = extensionSettings.regex.staticfunctions;
-  regexExpression = RegExp(regexExpression, "gi");
-
-  while ((matches = regexExpression.exec(textEditor)) !== null) {
-    elementLabel = matches[1];
-    elementParametersList = [];
-
-    matches[2].split(",").forEach((element) => {
-      element = element.trim();
-      if (element.length > 0) {
-        if (element.search(" as ") > 0) {
-          element = element.split(" as ").join(" : ");
-        } else {
-          if (element.startsWith("c")) {
-            element = `${element} : character`;
-          } else if (element.startsWith("n")) {
-            element = `${element} : numeric`;
-          } else if (element.startsWith("a")) {
-            element = `${element} : array`;
-          } else if (element.startsWith("d")) {
-            element = `${element} : date`;
-          } else if (element.startsWith("o")) {
-            element = `${element} : object`;
-          } else if (element.startsWith("j")) {
-            element = `${element} : json`;
-          }
-        }
-        elementParametersList.push(element.trim());
-      }
-    });
-
-    staticFunctionsList.push({
-      label: elementLabel,
-      parameters: elementParametersList,
-      lineNumber: activeEditor.document.positionAt(matches.index).line + 1,
-    });
-  }
-
-  return staticFunctionsList;
+  return variableList;
 }
 
-function getUserFunctionsInActiveEditor() {
-  let activeEditor;
-  let textEditor;
-  let userFunctionsList;
-  let extensionSettings;
-  let regexExpression;
-  let matches;
-  let elementLabel;
-  let elementParametersList;
-
-  activeEditor = vscode.window.activeTextEditor;
-  if (!activeEditor) {
-    return [];
+/**
+ * Adiciona um prefixo de tipo aos parâmetros.
+ * @param {string} element - O parâmetro ao qual adicionar o prefixo de tipo.
+ * @returns {string} O parâmetro com o prefixo de tipo adicionado.
+ */
+function addTypePrefix(element) {
+  if (element.startsWith("c")) {
+    element = `${element} : character`;
+  } else if (element.startsWith("n")) {
+    element = `${element} : numeric`;
+  } else if (element.startsWith("l")) {
+    element = `${element} : logical`;
+  } else if (element.startsWith("a")) {
+    element = `${element} : array`;
+  } else if (element.startsWith("d")) {
+    element = `${element} : date`;
+  } else if (element.startsWith("o")) {
+    element = `${element} : object`;
+  } else if (element.startsWith("j")) {
+    element = `${element} : json`;
   }
-
-  extensionSettings = vscode.workspace.getConfiguration("advplFunctionsList");
-
-  textEditor = activeEditor.document.getText();
-  if (textEditor.length == 0) {
-    return [];
-  }
-
-  userFunctionsList = [];
-  regexExpression = extensionSettings.regex.userfunctions;
-  regexExpression = RegExp(regexExpression, "gi");
-
-  while ((matches = regexExpression.exec(textEditor)) !== null) {
-    elementLabel = matches[1];
-    elementParametersList = [];
-
-    matches[2].split(",").forEach((element) => {
-      element = element.trim();
-      if (element.trim().length > 0) {
-        if (element.search(" as ") > 0) {
-          element = element.split(" as ").join(" : ");
-        } else {
-          if (element.startsWith("c")) {
-            element = `${element} : character`;
-          } else if (element.startsWith("n")) {
-            element = `${element} : numeric`;
-          } else if (element.startsWith("a")) {
-            element = `${element} : array`;
-          } else if (element.startsWith("d")) {
-            element = `${element} : date`;
-          } else if (element.startsWith("o")) {
-            element = `${element} : object`;
-          } else if (element.startsWith("j")) {
-            element = `${element} : json`;
-          }
-        }
-        elementParametersList.push(element.trim());
-      }
-    });
-
-    userFunctionsList.push({
-      label: elementLabel,
-      parameters: elementParametersList,
-      lineNumber: activeEditor.document.positionAt(matches.index).line + 1,
-    });
-  }
-
-  return userFunctionsList;
+  return element;
 }
 
-module.exports = {
-  activate,
-  deactivate,
-};
+/**
+ * Exibe uma mensagem de informação.
+ * @param {string} message - A mensagem a ser exibida.
+ */
+function showInformationMessage(message) {
+  vscode.window.showInformationMessage(message);
+}
+
+// Exporta as funções `activate` e `deactivate` para serem usadas como interface com o VS Code
+module.exports = { activate, deactivate };
