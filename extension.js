@@ -268,14 +268,17 @@ function getFunctionVariables(functionName) {
  * @returns {Array} Uma lista de objetos representando as variáveis encontradas.
  */
 function extractVariables(functionBody) {
-  const regexExpressionVariables = RegExp(
-    `(Local|Private) (.*?)(\\s|\\t)*?:=`,
+  const extensionSettings =
+    vscode.workspace.getConfiguration("advplFunctionsList");
+  const regexExpressionVariables = RegExp(extensionSettings.regex.variables);
+  const regex = RegExp(
+    regexExpressionVariables,
     "gi"
   );
 
   const variableList = [];
   let matches;
-  while ((matches = regexExpressionVariables.exec(functionBody)) !== null) {
+  while ((matches = regex.exec(functionBody)) !== null) {
     const type = "variable";
     const scope = matches[1];
     const label = matches[2];

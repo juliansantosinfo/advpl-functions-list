@@ -40,10 +40,10 @@
       "type": "object",
       "title": "AdvPL Parameters List",
       "properties": {
-        "advplFunctionsList.showActivationMessage": {
-          "type": "boolean",
-          "default": false,
-          "description": "Exibir mensagem de extensão ativada"
+        "advplFunctionsList.regex.functions": {
+          "type": "string",
+          "default": "(Static|User)\\s+function\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)",
+          "description": "Define expressão regex para busca da função GetMV"
         },
         "advplFunctionsList.regex.staticfunctions": {
           "type": "string",
@@ -54,6 +54,16 @@
           "type": "string",
           "default": "user\\s+function\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)",
           "description": "Define expressão regex para busca da função GetNewPar"
+        },
+        "advplFunctionsList.regex.parameters": {
+          "type": "string",
+          "default": "(Static|User)\\sFunction\\s*?${functionName}\\((.*?)\\)([\\s\\S]*?)\\nReturn\\s*?(.*?)\\n",
+          "description": "Define expressão regex para busca da função GetMV"
+        },
+        "advplFunctionsList.regex.variables": {
+          "type": "string",
+          "default": "(Local|Private) (.*?)(\\s|\\t)*?:=",
+          "description": "Define expressão regex para busca da função GetMV"
         }
       }
     },
