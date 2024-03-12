@@ -103,7 +103,9 @@ class SideBarMenuProvider {
 
     let iconName = "x";
     if (element.type) {
-      if (element.type === "function") {
+      if (element.type === "include") {
+        iconName = "symbol-number";
+      } else if (element.type === "function") {
         iconName = "symbol-function";
       } else if (element.type === "parameter") {
         iconName = "symbol-parameter";
@@ -129,7 +131,9 @@ class SideBarMenuProvider {
    * @returns {Promise<any[]>} Uma promessa que resolve em uma matriz de elementos filhos.
    */
   async getChildren(element) {
-    let functionsList;
+    let childernList = [];
+    let includeList = [];
+    let functionsList = [];
     if (element) {
       let functionsList = [];
       if (element.parameters) {
@@ -150,10 +154,52 @@ class SideBarMenuProvider {
       }
       return functionsList;
     } else {
+      includeList = getIncludesInActiveEditor();
       functionsList = getFunctionsInActiveEditor();
-      return functionsList;
+      includeList.forEach((element) => {
+        childernList.push(element);
+      });
+      functionsList.forEach((element) => {
+        childernList.push(element);
+      });
+      return childernList;
     }
   }
+}
+
+/**
+ * Obtém uma lista de includes presentes no editor ativo.
+ * @returns {Array} Uma lista de objetos representando os includes encontrados, contendo o tipo e o label de cada include.
+ */
+function getIncludesInActiveEditor() {
+  const activeEditor = vscode.window.activeTextEditor;
+  const textEditor = activeEditor.document.getText();
+
+  if (textEditor.length === 0) {
+    return [];
+  }
+
+  const extensionSettings =
+    vscode.workspace.getConfiguration("advplFunctionsList");
+  const regexExpression = extensionSettings.regex.includes;
+  const regex = RegExp(regexExpression, "gi");
+  const matcheFunction = regex.exec(textEditor);
+
+  if (!matcheFunction) {
+    return [];
+  }
+
+  const includeList = [];
+
+  let matches;
+  while ((matches = regex.exec(textEditor)) !== null) {
+    const type = "include";
+    const label = matches[1];
+
+    includeList.push({ type, label });
+  }
+
+  return includeList;
 }
 
 /**
@@ -173,7 +219,6 @@ function getFunctionsInActiveEditor() {
 
   const extensionSettings =
     vscode.workspace.getConfiguration("advplFunctionsList");
-  // const regexExpression = extensionSettings.regex[type + "functions"];
   const regexExpression = extensionSettings.regex.functions;
   const regex = RegExp(regexExpression, "gi");
 
@@ -231,12 +276,15 @@ function getFunctionVariables(functionName) {
     return [];
   }
 
-  const regexExpressionFunction = RegExp(
-    `(Static|User)\\sFunction\\s*?${functionName}\\((.*?)\\)([\\s\\S]*?)\\nReturn\\s*?(.*?)\\n`,
-    "gi"
+  const extensionSettings =
+    vscode.workspace.getConfiguration("advplFunctionsList");
+  const regexExpression = extensionSettings.regex.functionBody.replace(
+    "functionName",
+    functionName
   );
+  const regex = RegExp(regexExpression, "gi");
 
-  const matcheFunction = regexExpressionFunction.exec(textEditor);
+  const matcheFunction = regex.exec(textEditor);
 
   if (!matcheFunction) {
     return [];
@@ -256,7 +304,9 @@ function getFunctionVariables(functionName) {
 function extractVariables(functionBody) {
   const extensionSettings =
     vscode.workspace.getConfiguration("advplFunctionsList");
-  const regexExpressionVariables = RegExp(extensionSettings.regex.variables);
+  const regexExpressionVariables = RegExp(
+    extensionSettings.regex.functionVariables
+  );
   const regex = RegExp(regexExpressionVariables, "gi");
 
   const variableList = [];

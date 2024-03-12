@@ -2,7 +2,7 @@
   "name": "advpl-functions-list",
   "displayName": "AdvPL Functions List",
   "description": "A extensão *AdvPL Function List* é uma ferramenta projetada para desenvolvedores AdvPL que trabalham com Visual Studio Code. Esta extensão oferece uma maneira conveniente de listar e explorar funções presentes no arquivo em edição diretamente na barra lateral do explorador de arquivos.",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "icon": "images/icon.png",
   "publisher": "JulianSantos",
   "author": {
@@ -39,30 +39,35 @@
       "type": "object",
       "title": "AdvPL Parameters List",
       "properties": {
+        "advplFunctionsList.regex.includes": {
+          "type": "string",
+          "default": "#include \"(.*?)\"",
+          "description": ""
+        },
         "advplFunctionsList.regex.functions": {
           "type": "string",
           "default": "(Static|User)\\s+function\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)",
-          "description": "Define expressão regex para busca da função GetMV"
+          "description": ""
+        },
+        "advplFunctionsList.regex.functionBody": {
+          "type": "string",
+          "default": "(Static|User)\\sFunction\\s*?functionName\\((.*?)\\)([\\s\\S]*?)\\nReturn\\s*?(.*?)\\n",
+          "description": ""
+        },
+        "advplFunctionsList.regex.functionVariables": {
+          "type": "string",
+          "default": "(Local|Private) (.*?)(\\s|\\t)*?:=",
+          "description": ""
         },
         "advplFunctionsList.regex.staticfunctions": {
           "type": "string",
           "default": "static\\s+function\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)",
-          "description": "Define expressão regex para busca da função GetMV"
+          "description": ""
         },
         "advplFunctionsList.regex.userfunctions": {
           "type": "string",
           "default": "user\\s+function\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(([^)]*)\\)",
-          "description": "Define expressão regex para busca da função GetNewPar"
-        },
-        "advplFunctionsList.regex.parameters": {
-          "type": "string",
-          "default": "(Static|User)\\sFunction\\s*?${functionName}\\((.*?)\\)([\\s\\S]*?)\\nReturn\\s*?(.*?)\\n",
-          "description": "Define expressão regex para busca da função GetMV"
-        },
-        "advplFunctionsList.regex.variables": {
-          "type": "string",
-          "default": "(Local|Private) (.*?)(\\s|\\t)*?:=",
-          "description": "Define expressão regex para busca da função GetMV"
+          "description": ""
         }
       }
     },
