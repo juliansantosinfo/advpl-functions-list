@@ -2,7 +2,7 @@
   "name": "advpl-functions-list",
   "displayName": "AdvPL Functions List",
   "description": "A extensão *AdvPL Function List* é uma ferramenta projetada para desenvolvedores AdvPL que trabalham com Visual Studio Code. Esta extensão oferece uma maneira conveniente de listar e explorar funções presentes no arquivo em edição diretamente na barra lateral do explorador de arquivos.",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "icon": "images/icon.png",
   "publisher": "JulianSantos",
   "author": {
@@ -28,7 +28,6 @@
     "Other"
   ],
   "activationEvents": [
-    "onLanguage:plaintext",
     "onLanguage:advpl",
     "onLanguage:tlpp"
   ],

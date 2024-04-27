@@ -173,6 +173,10 @@ class SideBarMenuProvider {
  */
 function getIncludesInActiveEditor() {
   const activeEditor = vscode.window.activeTextEditor;
+  if (!activeEditor) {
+    return [];
+  }
+  
   const textEditor = activeEditor.document.getText();
 
   if (textEditor.length === 0) {

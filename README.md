@@ -16,7 +16,7 @@ Com a *Function List*, os desenvolvedores podem organizar e visualizar facilment
 
 ## Como Usar
 
-Basta abrir um arquivo de código-fonte no Visual Studio Code e visualizar a barra lateral do explorador de arquivos. Você encontrará dois menus: *Static Functions* e *User Functions*, cada um contendo as respectivas funções encontradas no arquivo em edição.
+Basta abrir um arquivo de código-fonte no Visual Studio Code e visualizar a barra lateral do explorador de arquivos. Você encontrará o menu AdvPL Functions contendo as funções encontradas no arquivo em edição.
 
 ## Amostra
 
@@ -28,9 +28,12 @@ Não há requisitos ou dependências específicas para esta extensão. Ela se in
 
 ## Configurações da Extensão
 
-advplParametersList.regex.GetMV: Define expressao regex para busca das chamadas a funcao GetMV
-advplParametersList.regex.GetNewPar: Define expressao regex para busca das chamadas a funcao GetNewPar
-advplParametersList.regex.SuperGetMV: Define expressao regex para busca das chamadas a funcao SuperGetMV
+advplFunctionsList.regex.includes: Define expressao regex para busca das includes
+advplFunctionsList.regex.functions: Define expressao regex para busca das funções
+advplFunctionsList.regex.functionBody: Define expressao regex para busca do corpo das funções
+advplFunctionsList.regex.functionVariables: Define expressao regex para busca das variáveis
+advplFunctionsList.regex.staticfunctions: Define expressao regex para busca das static functions
+advplFunctionsList.regex.userfunctions: Define expressao regex para busca das user functions
 
 ## Contribua
 
@@ -48,5 +51,22 @@ Atualmente não há problemas conhecidos com esta extensão. Se encontrar algum 
 ## Notas de Lançamento
 
 
-- **1.0.0:** Lançamento inicial da extensão **advpl-parameters-list**. Adiciona suporte para listar e explorar funções estáticas e funções do usuário diretamente na barra lateral do explorador de arquivos.
+### 0.0.7 (27/04/2024)
+* __Feature__: Corrige erro ao ativar extensão sem nenhum arquivo aberto no editor.
+
+### 0.0.6 (09/03/2024)
+* __Feature__: Adiciona os includes do editor ativo à árvore de funções AdvPL.
+
+### 0.0.4 (09/03/2024)
+* __Bug Fix__: Corrige o processo de parsing de parâmetros da função.
+
+### 0.0.3 (09/03/2024)
+* __Refactore__: Unifica menu de funções estáticas e de usuário em um único menu.
+* __Bug Fix__: Corrige o processo de parsing de parâmetros da função.
+
+### 0.0.2 (09/03/2024)
+* __Refecture__: Refatora o processo para busca de funções.
+
+### 0.0.1 (09/03/2024)
+* Lançamento inicial da extensão **advpl-function-list**. Adiciona suporte para listar e explorar funções estáticas e funções do usuário diretamente na barra lateral do explorador de arquivos.
 
